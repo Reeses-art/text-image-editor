@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Image Editor - OCR & Image Manipulation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+    }
+
+    .card h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    input[type="file"],
+    input[type="text"],
+    input[type="number"],
+    input[type="color"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1em;
+      transition: border-color 0.3s ease;
+      font-family: inherit;
+    }
+
+    input[type="file"]:focus,
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="color"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .preview-section {
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 2px solid #e0e0e0;
+    }
+
+    .preview-section h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+
+    .image-preview {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+    }
+
+    .text-output {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      max-height: 300px;
+      overflow-y: auto;
+      color: #333;
+      line-height: 1.6;
+      border-left: 4px solid #667eea;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .color-input-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    input[type="color"] {
+      padding: 8px;
+      height: 50px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 1.8em;
+      }
+
+      .button-group {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .stat-item {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🖼️ Text Image Editor</h1>
+      <p>Extract, Add, and Edit text in images using OCR technology</p>
+    </header>
+
+    <div class="main-grid">
+      <!-- Extract Text Card -->
+      <div class="card">
+        <h2>🔍 Extract Text</h2>
+        <div id="extractMessage"></div>
+        <form id="extractForm">
+          <div class="form-group">
+            <label for="extractImage">Upload Image:</label>
+            <input type="file" id="extractImage" accept="image/*" required>
+          </div>
+          <button type="submit" id="extractBtn">Extract Text</button>
+        </form>
+        <div class="preview-section" id="extractPreview" style="display: none;">
+          <h3>Extracted Content:</h3>
+          <img id="extractPreviewImg" class="image-preview" alt="Uploaded image">
+          <div class="stats" id="extractStats"></div>
+          <div class="text-output" id="extractedText"></div>
+        </div>
+      </div>
+
+      <!-- Add Text Card -->
+      <div class="card">
+        <h2>✏️ Add Text</h2>
+        <div id="addMessage"></div>
+        <form id="addForm">
+          <div class="form-group">
+            <label for="addImage">Upload Image:</label>
+            <input type="file" id="addImage" accept="image/*" required>
+          </div>
+          <div class="form-group">
+            <label for="addTextInput">Text to Add:</label>
+            <input type="text" id="addTextInput" placeholder="Enter text" required>
+          </div>
+          <div class="form-group">
+            <label>Position & Size:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <input type="number" id="addX" placeholder="X" value="50" min="0">
+              <input type="number" id="addY" placeholder="Y" value="50" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="addColor">Text Color:</label>
+            <input type="color" id="addColor" value="#000000">
+          </div>
+          <button type="submit" id="addBtn">Add Text to Image</button>
+        </form>
+        <div class="preview-section" id="addPreview" style="display: none;">
+          <h3>Result:</h3>
+          <img id="addResultImg" class="image-preview" alt="Result image">
+          <button onclick="downloadImage('addResultImg', 'text-added.png')" style="margin-top: 10px;">Download Image</button>
+        </div>
+      </div>
+
+      <!-- Edit Text Card -->
+      <div class="card">
+        <h2>✂️ Edit Text</h2>
+        <div id="editMessage"></div>
+        <form id="editForm">
+          <div class="form-group">
+            <label for="editImage">Upload Image:</label>
+            <input type="file" id="editImage" accept="image/*" required>
+          </div>
+          <div class="form-group">
+            <label for="findText">Find Text:</label>
+            <input type="text" id="findText" placeholder="Enter text to find" required>
+          </div>
+          <div class="form-group">
+            <label for="replaceText">Replace With:</label>
+            <input type="text" id="replaceText" placeholder="Enter replacement text" required>
+          </div>
+          <div class="color-input-group">
+            <div class="form-group">
+              <label for="editColor">Text Color:</label>
+              <input type="color" id="editColor" value="#000000">
+            </div>
+            <div class="form-group">
+              <label for="editBgColor">Background Color:</label>
+              <input type="color" id="editBgColor" value="#FFFFFF">
+            </div>
+          </div>
+          <button type="submit" id="editBtn">Replace Text</button>
+        </form>
+        <div class="preview-section" id="editPreview" style="display: none;">
+          <h3>Result:</h3>
+          <img id="editResultImg" class="image-preview" alt="Result image">
+          <button onclick="downloadImage('editResultImg', 'text-edited.png')" style="margin-top: 10px;">Download Image</button>
+        </div>
+      </div>
+
+      <!-- Image Info Card -->
+      <div class="card">
+        <h2>ℹ️ Image Info</h2>
+        <div id="infoMessage"></div>
+        <form id="infoForm">
+          <div class="form-group">
+            <label for="infoImage">Upload Image:</label>
+            <input type="file" id="infoImage" accept="image/*" required>
+          </div>
+          <button type="submit" id="infoBtn">Get Image Info</button>
+        </form>
+        <div class="preview-section" id="infoPreview" style="display: none;">
+          <h3>Image Details:</h3>
+          <div class="stats" id="infoStats"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+
+    // Extract Text Form
+    document.getElementById('extractForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('extractImage').files[0];
+      if (!file) return;
+
+      showLoading('extractBtn');
+      clearMessage('extractMessage');
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch(`${API_BASE}/extract`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          displayExtractedText(data);
+          displayPreview(file, 'extractPreviewImg');
+          document.getElementById('extractPreview').style.display = 'block';
+          showMessage('extractMessage', `Successfully extracted ${data.blockCount} text blocks!`, 'success');
+        } else {
+          showMessage('extractMessage', data.error, 'error');
+        }
+      } catch (error) {
+        showMessage('extractMessage', 'Error: ' + error.message, 'error');
+      }
+
+      restoreButton('extractBtn');
+    });
+
+    // Add Text Form
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('addImage').files[0];
+      if (!file) return;
+
+      showLoading('addBtn');
+      clearMessage('addMessage');
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('text', document.getElementById('addTextInput').value);
+        formData.append('x', document.getElementById('addX').value);
+        formData.append('y', document.getElementById('addY').value);
+        formData.append('color', document.getElementById('addColor').value);
+
+        const response = await fetch(`${API_BASE}/add-text`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          displayResultImage(blob, 'addResultImg');
+          document.getElementById('addPreview').style.display = 'block';
+          showMessage('addMessage', 'Text added successfully!', 'success');
+        } else {
+          const data = await response.json();
+          showMessage('addMessage', data.error, 'error');
+        }
+      } catch (error) {
+        showMessage('addMessage', 'Error: ' + error.message, 'error');
+      }
+
+      restoreButton('addBtn');
+    });
+
+    // Edit Text Form
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('editImage').files[0];
+      if (!file) return;
+
+      showLoading('editBtn');
+      clearMessage('editMessage');
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('findText', document.getElementById('findText').value);
+        formData.append('replaceText', document.getElementById('replaceText').value);
+        formData.append('color', document.getElementById('editColor').value);
+        formData.append('backgroundColor', document.getElementById('editBgColor').value);
+
+        const response = await fetch(`${API_BASE}/edit-text`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          const blob = await response.blob();
+          displayResultImage(blob, 'editResultImg');
+          document.getElementById('editPreview').style.display = 'block';
+          showMessage('editMessage', 'Text replaced successfully!', 'success');
+        } else {
+          const data = await response.json();
+          showMessage('editMessage', data.error, 'error');
+        }
+      } catch (error) {
+        showMessage('editMessage', 'Error: ' + error.message, 'error');
+      }
+
+      restoreButton('editBtn');
+    });
+
+    // Image Info Form
+    document.getElementById('infoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('infoImage').files[0];
+      if (!file) return;
+
+      showLoading('infoBtn');
+      clearMessage('infoMessage');
+
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const response = await fetch(`${API_BASE}/image-info`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          displayImageStats(data);
+          document.getElementById('infoPreview').style.display = 'block';
+          showMessage('infoMessage', 'Image info retrieved successfully!', 'success');
+        } else {
+          showMessage('infoMessage', data.error, 'error');
+        }
+      } catch (error) {
+        showMessage('infoMessage', 'Error: ' + error.message, 'error');
+      }
+
+      restoreButton('infoBtn');
+    });
+
+    // Helper Functions
+    function showLoading(buttonId) {
+      const btn = document.getElementById(buttonId);
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span>Processing...';
+    }
+
+    function restoreButton(buttonId) {
+      const btn = document.getElementById(buttonId);
+      btn.disabled = false;
+      btn.innerHTML = btn.dataset.originalText || 'Submit';
+    }
+
+    function showMessage(elementId, message, type) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = `<div class="message ${type}">${message}</div>`;
+    }
+
+    function clearMessage(elementId) {
+      document.getElementById(elementId).innerHTML = '';
+    }
+
+    function displayPreview(file, imgId) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById(imgId).src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function displayResultImage(blob, imgId) {
+      const url = URL.createObjectURL(blob);
+      document.getElementById(imgId).src = url;
+    }
+
+    function displayExtractedText(data) {
+      const container = document.getElementById('extractedText');
+      container.innerHTML = `<strong>Full Text:</strong><br>${data.fullText}`;
+
+      const stats = document.getElementById('extractStats');
+      stats.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-label">Text Blocks</div>
+          <div class="stat-value">${data.blockCount}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Confidence</div>
+          <div class="stat-value">${(data.overallConfidence * 100).toFixed(1)}%</div>
+        </div>
+      `;
+    }
+
+    function displayImageStats(data) {
+      const stats = document.getElementById('infoStats');
+      const sizeKB = (data.size / 1024).toFixed(2);
+      stats.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-label">Width</div>
+          <div class="stat-value">${data.width}px</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Height</div>
+          <div class="stat-value">${data.height}px</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Size</div>
+          <div class="stat-value">${sizeKB}KB</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Ratio</div>
+          <div class="stat-value">${(data.width / data.height).toFixed(2)}</div>
+        </div>
+      `;
+    }
+
+    function downloadImage(imgId, filename) {
+      const img = document.getElementById(imgId);
+      const link = document.createElement('a');
+      link.href = img.src;
+      link.download = filename;
+      link.click();
+    }
+
+    // Store original button text
+    document.querySelectorAll('button[type="submit"]').forEach(btn => {
+      btn.dataset.originalText = btn.innerHTML;
+    });
+  </script>
+</body>
+</html>
